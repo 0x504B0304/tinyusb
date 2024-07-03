@@ -161,10 +161,63 @@ uint8_t tuh_hid_interface_protocol(uint8_t daddr, uint8_t idx) {
 //--------------------------------------------------------------------+
 // Control Endpoint API
 //--------------------------------------------------------------------+
-uint8_t tuh_hid_get_protocol(uint8_t daddr, uint8_t idx) {
+// uint8_t tuh_hid_get_protocol(uint8_t daddr, uint8_t idx) {
+//   hidh_interface_t* p_hid = get_hid_itf(daddr, idx);
+//   return p_hid ? p_hid->protocol_mode : 0;
+// }
+
+static void get_protocol_complete(tuh_xfer_t* xfer) {
+  // TU_LOG_DRV("HID Get Protocol complete\r\n");
+  uint8_t const itf_num = (uint8_t) tu_le16toh(xfer->setup->wIndex);
+  uint8_t const daddr = xfer->daddr;
+  uint8_t const idx = tuh_hid_itf_get_index(daddr, itf_num);
+
   hidh_interface_t* p_hid = get_hid_itf(daddr, idx);
-  return p_hid ? p_hid->protocol_mode : 0;
+  TU_VERIFY(p_hid,);
+
+  if (XFER_RESULT_SUCCESS != xfer->result) {
+    return;
+    // p_hid->protocol_mode = (uint8_t) tu_le16toh(xfer->setup->wValue);
+  }
+  if (tuh_hid_get_protocol_complete_cb) {
+    // 调用回调函数，传递协议值
+    tuh_hid_get_protocol_complete_cb(daddr, idx, xfer->buffer[0], (xfer->result == XFER_RESULT_SUCCESS));
+  }
 }
+
+bool _hidh_get_protocol(uint8_t daddr, uint8_t itf_num, tuh_xfer_cb_t complete_cb, uintptr_t user_data) {
+  tusb_control_request_t request = {
+      .bmRequestType_bit = {
+          .recipient = TUSB_REQ_RCPT_INTERFACE,
+          .type      = TUSB_REQ_TYPE_CLASS,
+          .direction = TUSB_DIR_IN
+      },
+      .bRequest = HID_REQ_CONTROL_GET_PROTOCOL,
+      .wValue   = 0,
+      .wIndex   = itf_num,
+      .wLength  = 1 // 协议值长度为1字节
+  };
+
+  uint8_t protocol;
+  tuh_xfer_t xfer = {
+      .daddr       = daddr,
+      .ep_addr     = 0,
+      .setup       = &request,
+      .buffer      = &protocol, // 接收协议值的缓冲区
+      .complete_cb = complete_cb,
+      .user_data   = user_data
+  };
+
+  return tuh_control_xfer(&xfer);
+}
+
+bool tuh_hid_get_protocol(uint8_t daddr, uint8_t idx) {
+  hidh_interface_t* p_hid = get_hid_itf(daddr, idx);
+  TU_VERIFY(p_hid);
+
+  return _hidh_get_protocol(daddr, p_hid->itf_num, get_protocol_complete, 0);
+}
+
 
 static void set_protocol_complete(tuh_xfer_t* xfer) {
   uint8_t const itf_num = (uint8_t) tu_le16toh(xfer->setup->wIndex);

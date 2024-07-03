@@ -70,7 +70,8 @@
 
 #if CFG_TUSB_DEBUG
   #include <stdio.h>
-  #define _MESS_FAILED()    tu_printf("%s %d: ASSERT FAILED\r\n", __func__, __LINE__)
+  #define _MESS_FAILED() while (1)
+  // #define _MESS_FAILED()    tu_printf("%s %d: ASSERT FAILED\r\n", __func__, __LINE__)
 #else
   #define _MESS_FAILED() do {} while (0)
 #endif

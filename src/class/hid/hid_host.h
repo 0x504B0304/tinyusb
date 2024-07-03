@@ -95,7 +95,7 @@ TU_ATTR_UNUSED uint8_t tuh_hid_parse_report_descriptor(tuh_hid_report_info_t* re
 // Get current protocol: HID_PROTOCOL_BOOT (0) or HID_PROTOCOL_REPORT (1)
 // Note: Device will be initialized in Boot protocol for simplicity.
 //       Application can use set_protocol() to switch back to Report protocol.
-uint8_t tuh_hid_get_protocol(uint8_t dev_addr, uint8_t idx);
+bool tuh_hid_get_protocol(uint8_t dev_addr, uint8_t idx);
 
 // Device by default is enumerated in Boot protocol for simplicity. Application
 // can use this to modify the default protocol for next enumeration.
@@ -152,7 +152,7 @@ TU_ATTR_WEAK void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t idx);
 
 // Invoked when received report from device via interrupt endpoint
 // Note: if there is report ID (composite), it is 1st byte of report
-void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t idx, uint8_t const* report, uint16_t len);
+void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t idx, uint8_t* report, uint16_t len);
 
 // Invoked when sent report to device successfully via interrupt endpoint
 TU_ATTR_WEAK void tuh_hid_report_sent_cb(uint8_t dev_addr, uint8_t idx, uint8_t const* report, uint16_t len);
@@ -168,6 +168,9 @@ TU_ATTR_WEAK void tuh_hid_set_report_complete_cb(uint8_t dev_addr, uint8_t idx, 
 // Invoked when Set Protocol request is complete
 TU_ATTR_WEAK void tuh_hid_set_protocol_complete_cb(uint8_t dev_addr, uint8_t idx, uint8_t protocol);
 
+TU_ATTR_WEAK void tuh_hid_get_report_complete_cb(uint8_t dev_addr, uint8_t idx, uint8_t report_id, uint8_t report_type, uint16_t len);
+
+TU_ATTR_WEAK void tuh_hid_get_protocol_complete_cb(uint8_t dev_addr, uint8_t idx, uint8_t protocol,bool status);
 //--------------------------------------------------------------------+
 // Internal Class Driver API
 //--------------------------------------------------------------------+

@@ -486,7 +486,7 @@ void tuh_task_ext(uint32_t timeout_ms, bool in_isr) {
         // TODO better to have an separated queue for newly attached devices
         if (_dev0.enumerating) {
           TU_LOG_USBH("[%u:] USBH Defer Attach until current enumeration complete\r\n", event.rhport);
-
+          while(1);
           bool is_empty = osal_queue_empty(_usbh_q);
           queue_event(&event, in_isr);
 
@@ -1229,6 +1229,7 @@ static void process_removing_device(uint8_t rhport, uint8_t hub_addr, uint8_t hu
         if (is_hub_addr(daddr)) {
           TU_LOG_USBH("  is a HUB device %u\r\n", daddr);
           removing_hubs |= TU_BIT(dev_id - CFG_TUH_DEVICE_MAX);
+          if(tuh_hub_umount_cb) tuh_hub_umount_cb(daddr);
         } else {
           // Invoke callback before closing driver (maybe call it later ?)
           if (tuh_umount_cb) tuh_umount_cb(daddr);
@@ -1724,6 +1725,10 @@ void usbh_driver_set_config_complete(uint8_t dev_addr, uint8_t itf_num) {
 
     if (is_hub_addr(dev_addr)) {
       TU_LOG_USBH("HUB address = %u is mounted\r\n", dev_addr);
+      if(tuh_hub_mount_cb)
+      {
+          tuh_hub_mount_cb(dev_addr);
+      }
     }else {
       // Invoke callback if available
       if (tuh_mount_cb) tuh_mount_cb(dev_addr);
@@ -1734,12 +1739,12 @@ void usbh_driver_set_config_complete(uint8_t dev_addr, uint8_t itf_num) {
 static void enum_full_complete(void) {
   // mark enumeration as complete
   _dev0.enumerating = 0;
-
 #if CFG_TUH_HUB
   // get next hub status
   if (_dev0.hub_addr) hub_edpt_status_xfer(_dev0.hub_addr);
 #endif
-
+  _dev0.hub_addr = 0;
+  _dev0.hub_port = 0;
 }
 
 #endif
