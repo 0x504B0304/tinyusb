@@ -408,6 +408,8 @@ bool tuh_hid_receive_report(uint8_t daddr, uint8_t idx) {
   TU_VERIFY(p_hid);
 
   // claim endpoint
+  if(p_hid->ep_in == 0)
+    return false;
   TU_VERIFY(usbh_edpt_claim(daddr, p_hid->ep_in));
 
   if (!usbh_edpt_xfer(daddr, p_hid->ep_in, p_hid->epin_buf, p_hid->epin_size)) {
